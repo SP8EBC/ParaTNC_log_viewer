@@ -7,11 +7,12 @@
                 "/usr/include/x86_64-linux-gnu/",
                 "/usr/include/",
             ],
-            "defines": ["SAMPLERATE=9600", "BITRATE=1200", "__cplusplus=202002", "__cpp_lib_concepts=1"],
+            "defines": ["SAMPLERATE=9600", "BITRATE=1200", "SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG"],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",
-            "cppStandard": "gnu++17",
-            "intelliSenseMode": "linux-gcc-x64"
+            "cppStandard": "gnu++20",
+            "intelliSenseMode": "linux-gcc-x64",
+            "compileCommands": "${workspaceFolder}/compile_commands.json"
         }
     ],
     "version": 4

@@ -1,0 +1,14 @@
+/*
+ * events_tcpip.h
+ *
+ *  Created on: Jul 28, 2024
+ *      Author: mateusz
+ */
+
+#ifndef EVENTS_DEFINITIONS_EVENTS_TCPIP_H_
+#define EVENTS_DEFINITIONS_EVENTS_TCPIP_H_
+
+#define EVENTS_TCPIP_ERR_CONNECTING					  (0x01U)
+#define EVENTS_TCPIP_ERR_CONNECTING_NO_MODEM_RESPONSE (0x02U)
+
+#endif /* EVENTS_DEFINITIONS_EVENTS_TCPIP_H_ */

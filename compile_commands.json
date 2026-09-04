@@ -1,0 +1,102 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG",
+      "-I/usr/include/spdlog",
+      "-I",
+      "./wjwwood_serial/include",
+      "-I.",
+      "-std=c++20",
+      "-Os",
+      "-Wmaybe-uninitialized",
+      "-Wpedantic",
+      "-Wno-return-local-addr",
+      "-Wparentheses",
+      "-c",
+      "-fmessage-length=0",
+      "-MTsrc/main.o",
+      "-o",
+      "src/main.o",
+      "src/main.cpp"
+    ],
+    "directory": "/home/mateusz/Documents/___STM32/ParaTNC_log_viewer",
+    "file": "/home/mateusz/Documents/___STM32/ParaTNC_log_viewer/src/main.cpp",
+    "output": "/home/mateusz/Documents/___STM32/ParaTNC_log_viewer/src/main.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG",
+      "-I/usr/include/spdlog",
+      "-I",
+      "./wjwwood_serial/include",
+      "-I.",
+      "-std=c++20",
+      "-Os",
+      "-Wmaybe-uninitialized",
+      "-Wpedantic",
+      "-Wno-return-local-addr",
+      "-Wparentheses",
+      "-c",
+      "-fmessage-length=0",
+      "-MTsrc/serial_io.o",
+      "-o",
+      "src/serial_io.o",
+      "src/serial_io.cpp"
+    ],
+    "directory": "/home/mateusz/Documents/___STM32/ParaTNC_log_viewer",
+    "file": "/home/mateusz/Documents/___STM32/ParaTNC_log_viewer/src/serial_io.cpp",
+    "output": "/home/mateusz/Documents/___STM32/ParaTNC_log_viewer/src/serial_io.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG",
+      "-I/usr/include/spdlog",
+      "-I",
+      "./wjwwood_serial/include",
+      "-I.",
+      "-std=c++20",
+      "-Os",
+      "-Wmaybe-uninitialized",
+      "-Wpedantic",
+      "-Wno-return-local-addr",
+      "-Wparentheses",
+      "-c",
+      "-fmessage-length=0",
+      "-MTwjwwood_serial/src/serial.o",
+      "-o",
+      "wjwwood_serial/src/serial.o",
+      "wjwwood_serial/src/serial.cc"
+    ],
+    "directory": "/home/mateusz/Documents/___STM32/ParaTNC_log_viewer",
+    "file": "/home/mateusz/Documents/___STM32/ParaTNC_log_viewer/wjwwood_serial/src/serial.cc",
+    "output": "/home/mateusz/Documents/___STM32/ParaTNC_log_viewer/wjwwood_serial/src/serial.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG",
+      "-I/usr/include/spdlog",
+      "-I",
+      "./wjwwood_serial/include",
+      "-I.",
+      "-std=c++20",
+      "-Os",
+      "-Wmaybe-uninitialized",
+      "-Wpedantic",
+      "-Wno-return-local-addr",
+      "-Wparentheses",
+      "-c",
+      "-fmessage-length=0",
+      "-MTwjwwood_serial/src/impl/unix.o",
+      "-o",
+      "wjwwood_serial/src/impl/unix.o",
+      "wjwwood_serial/src/impl/unix.cc"
+    ],
+    "directory": "/home/mateusz/Documents/___STM32/ParaTNC_log_viewer",
+    "file": "/home/mateusz/Documents/___STM32/ParaTNC_log_viewer/wjwwood_serial/src/impl/unix.cc",
+    "output": "/home/mateusz/Documents/___STM32/ParaTNC_log_viewer/wjwwood_serial/src/impl/unix.o"
+  }
+]

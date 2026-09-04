@@ -8,7 +8,7 @@
 
 class SerialIo {
   public:
-	SerialIo (std::string &portName);
+	SerialIo (const std::string &portName);
 
 	/**
 	 * Opens a serial port passed to a constructor
@@ -46,6 +46,7 @@ class SerialIo {
 	std::optional<event_log_t> receiveSingleEvent ();
 
   private:
+	static constexpr size_t kPacketSize = sizeof (event_log_t);
 	std::string m_portName;
 	serial::Serial m_rawSerialPort;
 };
