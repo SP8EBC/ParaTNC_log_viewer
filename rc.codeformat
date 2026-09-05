@@ -5,3 +5,6 @@ DIR=$(pwd)
 cd $DIR/src
 echo $(pwd)
 find . -type f -name "*.c" -exec clang-format -i {} \;
+find . -type f -name "*.h" -exec clang-format -i {} \;
+find . -type f -name "*.cpp" -exec clang-format -i {} \;
+find . -type f -name "*.hpp" -exec clang-format -i {} \;
