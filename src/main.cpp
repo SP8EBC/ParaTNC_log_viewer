@@ -14,6 +14,7 @@
 #include "spdlog/spdlog.h"
 #pragma pop_macro("U")
 
+#include "parameters_renderer.hpp"
 #include "serial_io.hpp"
 #include "shared/event_log_to_string.h"
 
@@ -38,34 +39,36 @@ int main (int argc, char *argv[])
             const event_log_source_t source_t = static_cast<event_log_source_t>(ev.source);
             const event_log_severity_t severity_t = static_cast<event_log_severity_t>(ev.severity);
 
+            const uint32_t counter = ev.event_counter_id;
             const char * source = event_log_source_to_str(source_t);
             const char * event_name = event_id_to_str(source_t, ev.event_id);
+            const std::string params = ParametersRenderer::getParameterStr (ev);
 
             switch (severity_t)
             {
                 case EVENT_DEBUG:
-                    spdlog::debug ("[{:<11}] {}", source, event_name);
+                    spdlog::debug ("{} [{:<11}] ={}= || {} ||", counter, source, event_name, params);
                     break;
 
                 case EVENT_INFO:
                 case EVENT_INFO_CYCLIC:
                 case EVENT_BOOTUP:
                 case EVENT_TIMESYNC:
-                    spdlog::info ("[{:<11}] {}", source, event_name);
+                    spdlog::info ("{} [{:<11}] = {} = || {} ||", counter, source, event_name, params);
                     break;
 
                 case EVENT_WARNING:
-                    spdlog::warn ("[{:<11}] {}", source, event_name);
+                    spdlog::warn ("{} [{:<11}] = {} = || {} ||", counter, source, event_name, params);
                     break;
 
                 case EVENT_ERROR:
                 case EVENT_ASSERT:
-                    spdlog::error ("[{:<11}] {}", source, event_name);
+                    spdlog::error ("{} [{:<11}] = {} = || {} ||", counter, source, event_name, params);
                     break;
 
                 default:
-                    spdlog::error ("[{:<11}] {} (unknown severity {})", source, event_name,
-                                    static_cast<int> (severity_t));
+                    spdlog::error ("{} [{:<11}] = {} = || {} (unknown severity {}) ||", counter, source, event_name,
+                                    params, static_cast<int> (severity_t));
                     break;
             }
         }
