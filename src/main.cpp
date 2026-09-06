@@ -16,6 +16,7 @@
 
 #include "parameters_renderer.hpp"
 #include "serial_io.hpp"
+#include "serial_port_selector.hpp"
 #include "shared/event_log_to_string.h"
 
 std::string serialPort;
@@ -67,9 +68,9 @@ void parseArgs (int argc, char *argv[])
 	}
 
 	if (serialPort.size () < 4) {
-		SPDLOG_ERROR ("Serial port not specified!");
 		std::cout << optionsDescription << std::endl;
-		exit (-3);
+
+		serialPort = SerialPortSelector::promptForSerialPort ();
 	}
 
 	if (odVariablesMap.count ("event-name-width")) {
@@ -110,7 +111,7 @@ int main (int argc, char *argv[])
 	spdlog::set_pattern ("[%Y-%m-%d %H:%M:%S.%e] [%^%-8l%$] %v");
 	SPDLOG_INFO ("============ MODBUS2APRS  =============");
 
-	SerialIo serialIo ("/dev/ttyS0");
+	SerialIo serialIo (serialPort);
 	if (serialIo.open () == false) {
 		return -1;
 	}

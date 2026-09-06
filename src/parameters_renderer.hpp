@@ -2,6 +2,7 @@
 #define FC4A2BF5_2699_4F23_84A5_BD9EA9935180
 #include "event_log_t.h"
 
+#include <optional>
 #include <string>
 
 class ParametersRenderer {
@@ -18,12 +19,12 @@ class ParametersRenderer {
 
   private:
 	/**
-	 * Returns true if this class has hardcoded member function, which can decode
-	 * exact meaning of each parameter, rescale it and print into a string
+	 * Returns a string if this class has hardcoded member function, which can decode
+	 * exact meaning of each parameter, rescale it and print into this returned string
 	 * @param event to check
-	 * @return true if there is custom formatter false if generic shall be used
+	 * @return string with custom-formatted parameters or nullopt if no custom format is available 
 	 */
-	static bool haveCustomParametersDescription (const event_log_t &event);
+	static std::optional<std::string> haveCustomParametersDescription (const event_log_t &event);
 
 	/**
 	 * Renders generic representation of event parameters in form of:
