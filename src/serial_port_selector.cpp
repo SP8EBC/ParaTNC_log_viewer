@@ -10,12 +10,14 @@
 #pragma pop_macro("U")
 
 #include <algorithm>
-#include <fcntl.h>
 #include <iostream>
+#include <vector>
+
+#if defined(__linux__)
+#include <fcntl.h>
 #include <linux/serial.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include <vector>
 
 bool SerialPortSelector::isRealSerialPort (const std::string &port)
 {
@@ -35,6 +37,17 @@ bool SerialPortSelector::isRealSerialPort (const std::string &port)
 
 	return isReal;
 }
+#else
+bool SerialPortSelector::isRealSerialPort (const std::string &port)
+{
+	// Windows' SetupAPI-based enumeration (see list_ports_win.cc) only ever
+	// reports COM ports actually registered on the system, unlike Linux's
+	// legacy 8250 driver which always exposes /dev/ttyS0..ttyS31 regardless
+	// of hardware presence -- so no extra filtering is needed here.
+	(void)port;
+	return true;
+}
+#endif
 
 std::string SerialPortSelector::promptForSerialPort ()
 {

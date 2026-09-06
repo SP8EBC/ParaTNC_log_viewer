@@ -30,6 +30,9 @@ paratnc_log_viewer
 *.a
 *.lib
 
+# ...except prebuilt mingw32 cross-compile dependencies (see mingw32_libs/BUILD_NOTES.md)
+!/mingw32_libs/lib/*.a
+
 # Executables
 *.exe
 *.out
