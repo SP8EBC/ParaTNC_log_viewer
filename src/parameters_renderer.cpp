@@ -20,13 +20,37 @@
 
 #include <sstream>
 
-const std::string ParametersRenderer::getParameterStr (const event_log_t &ev, bool skipZeroValues)
+/**
+ * Returns true if this label is valid and a parameter should be even printed
+ */
+inline bool isParamEnabled (const std::string &label)
+{
+	if (label.size () == 0) {
+		return false;
+	}
+	else if (label[0] == '0') {
+		return false;
+	}
+	else {
+		return true;
+	}
+}
+
+const std::string ParametersRenderer::getParameterStr (
+	const event_log_t &ev, bool skipZeroValues,
+	const std::optional<EventDescriptionObject> &descriptionFromJson)
 {
 	std::optional<std::string> cutomParemter = haveCustomParametersDescription (ev);
 	if (cutomParemter.has_value ()) {}
 	else {
-		// TODO: dispatch to a per-event custom formatter once implemented
-		return genericParameter (ev, skipZeroValues);
+		// check if JSON had anything for this event
+		if (descriptionFromJson.has_value ()) {
+			return parameterFromEventDescription (descriptionFromJson.value (), ev);
+		}
+		else {
+			// TODO: dispatch to a per-event custom formatter once implemented
+			return genericParameter (ev, skipZeroValues);
+		}
 	}
 
 	return genericParameter (ev, skipZeroValues);
@@ -167,6 +191,41 @@ std::string ParametersRenderer::genericParameter (const event_log_t &event, bool
 	append ("wp3: ", event.wparam3);
 	append ("lp: ", event.lparam);
 	append ("lp2: ", event.lparam2);
+
+	return oss.str ();
+}
+
+std::string ParametersRenderer::parameterFromEventDescription (const EventDescriptionObject &obj,
+															   const event_log_t &event)
+{
+	std::ostringstream oss;
+	bool first = true;
+	auto append = [&] (const std::string label, unsigned long value, bool isHex) {
+		if (!isParamEnabled (label)) {
+			return;
+		}
+
+		if (!first) {
+			oss << ", ";
+		}
+
+		if (isHex) {
+			oss << std::hex << label << value;
+		}
+		else {
+			oss << std::dec << label << value;
+		}
+
+		first = false;
+	};
+
+	append (obj.param, static_cast<unsigned int> (event.param), obj.asHexParam);
+	append (obj.param2, static_cast<unsigned int> (event.param2), obj.asHexParam2);
+	append (obj.wparam, event.wparam, obj.asHexWparam);
+	append (obj.wparam2, event.wparam2, obj.asHexWparam2);
+	append (obj.wparam3, event.wparam3, obj.asHexWparam3);
+	append (obj.lparam, event.lparam, obj.asHexLparam);
+	append (obj.lparam2, event.lparam2, obj.asHexLParam2);
 
 	return oss.str ();
 }

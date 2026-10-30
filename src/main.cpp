@@ -14,6 +14,8 @@
 #pragma pop_macro("U")
 #include <boost/program_options.hpp>
 
+#include "event_descriptions_storage.hpp"
+#include "hardcoded_event_log_description_json.hpp"
 #include "parameters_renderer.hpp"
 #include "serial_io.hpp"
 #include "serial_port_selector.hpp"
@@ -86,21 +88,20 @@ void parseArgs (int argc, char *argv[])
 	}
 }
 
-std::string formatEventName (const char *eventName)
+std::string formatEventName (std::string eventName)
 {
 	if (!eventNameWidthSet) {
-		return std::string (eventName);
+		return eventName;
 	}
 
-	std::string result (eventName);
-	if (result.size () > eventNameWidth) {
-		result.resize (eventNameWidth);
+	if (eventName.size () > eventNameWidth) {
+		eventName.resize (eventNameWidth);
 	}
-	else if (result.size () < eventNameWidth) {
-		result.append (eventNameWidth - result.size (), ' ');
+	else if (eventName.size () < eventNameWidth) {
+		eventName.append (eventNameWidth - eventName.size (), ' ');
 	}
 
-	return result;
+	return eventName;
 }
 
 int main (int argc, char *argv[])
@@ -109,12 +110,14 @@ int main (int argc, char *argv[])
 
 	spdlog::set_level (spdlog::level::debug);
 	spdlog::set_pattern ("[%Y-%m-%d %H:%M:%S.%e] [%^%-8l%$] %v");
-	SPDLOG_INFO ("============ MODBUS2APRS  =============");
+	SPDLOG_INFO ("============ ParaTNC_log_viewer  =============");
 
 	SerialIo serialIo (serialPort);
 	if (serialIo.open () == false) {
 		return -1;
 	}
+
+	EventDescriptionsStorage jsonEvents (hardcodedJson);
 
 	while (true) {
 		auto event = serialIo.receiveSingleEvent ();
@@ -124,15 +127,29 @@ int main (int argc, char *argv[])
 			const event_log_source_t source_t = static_cast<event_log_source_t> (ev.source);
 			const event_log_severity_t severity_t = static_cast<event_log_severity_t> (ev.severity);
 
+			const std::optional<EventDescriptionObject> eventDescriptionJson =
+				jsonEvents.getForEventSourceAndId (source_t, ev.event_id);
+
 			const uint32_t counter = ev.event_counter_id;
 			const char *source = event_log_source_to_str (source_t);
-			const char *event_name = event_id_to_str (source_t, ev.event_id);
+			std::string event_name;
+
+			if (eventDescriptionJson.has_value())
+			{
+				const EventDescriptionObject & obj = eventDescriptionJson.value();
+				event_name = obj.eventString;
+			}
+			else
+			{
+				event_name = event_id_to_str (source_t, ev.event_id);
+			}
+
 			const std::string event_name_str = formatEventName (event_name);
-			const std::string params = ParametersRenderer::getParameterStr (ev, skipZeroValues);
+			const std::string params = ParametersRenderer::getParameterStr (ev, skipZeroValues, eventDescriptionJson);
 
 			switch (severity_t) {
 			case EVENT_DEBUG:
-				spdlog::debug ("{} [{:<11}] ={}= || {} ||",
+				spdlog::debug ("{} [{:<11}] = {:<48.48} = || {} ||",
 							   counter,
 							   source,
 							   event_name_str,
@@ -143,7 +160,7 @@ int main (int argc, char *argv[])
 			case EVENT_INFO_CYCLIC:
 			case EVENT_BOOTUP:
 			case EVENT_TIMESYNC:
-				spdlog::info ("{} [{:<11}] = {} = || {} ||",
+				spdlog::info ("{} [{:<11}] = {:<48.48} = || {} ||",
 							  counter,
 							  source,
 							  event_name_str,
@@ -151,7 +168,7 @@ int main (int argc, char *argv[])
 				break;
 
 			case EVENT_WARNING:
-				spdlog::warn ("{} [{:<11}] = {} = || {} ||",
+				spdlog::warn ("{} [{:<11}] = {:<48.48} = || {} ||",
 							  counter,
 							  source,
 							  event_name_str,
@@ -160,7 +177,7 @@ int main (int argc, char *argv[])
 
 			case EVENT_ERROR:
 			case EVENT_ASSERT:
-				spdlog::error ("{} [{:<11}] = {} = || {} ||",
+				spdlog::error ("{} [{:<11}] = {:<48.48} = || {} ||",
 							   counter,
 							   source,
 							   event_name_str,
@@ -168,7 +185,7 @@ int main (int argc, char *argv[])
 				break;
 
 			default:
-				spdlog::error ("{} [{:<11}] = {} = || {} (unknown severity {}) ||",
+				spdlog::error ("{} [{:<11}] = {:<48.48} = || {} (unknown severity {}) ||",
 							   counter,
 							   source,
 							   event_name_str,
