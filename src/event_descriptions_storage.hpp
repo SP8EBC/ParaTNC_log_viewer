@@ -21,12 +21,11 @@ class EventDescriptionsStorage {
 	EventDescriptionsStorage (const std::string_view &jsonContent);
 
     /**
-     * Returns a copy of Log Event Description, fetched from appropriate 
-     * map
-     * @param src which source logged this event
-     * @param id of this source (which may repeat in different log sources)
+     * Returns a copy of Log Event Description, fetched from appropriate
+     * map using source and event id of given event
+     * @param event event received from the device
      */
-    std::optional<EventDescriptionObject> getForEventSourceAndId(event_log_source_t src, uint8_t id);
+    std::optional<EventDescriptionObject> getForEvent(const event_log_t &event);
 
   private:
 	/**

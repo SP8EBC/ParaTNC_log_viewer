@@ -88,18 +88,19 @@ EventDescriptionsStorage::EventDescriptionsStorage (const std::string_view &json
 }
 
 std::optional<EventDescriptionObject>
-EventDescriptionsStorage::getForEventSourceAndId (event_log_source_t src, uint8_t id)
+EventDescriptionsStorage::getForEvent (const event_log_t &event)
 {
 	if (!m_ConstructorSuccess) {
 		return std::nullopt;
 	}
 
-	const std::map<uint8_t, EventDescriptionObject> *map = getMapForSource (src);
+	const std::map<uint8_t, EventDescriptionObject> *map =
+		getMapForSource (static_cast<event_log_source_t> (event.source));
 	if (map == nullptr) {
 		return std::nullopt;
 	}
 
-	const auto it = map->find (id);
+	const auto it = map->find (event.event_id);
 	if (it == map->end ()) {
 		return std::nullopt;
 	}

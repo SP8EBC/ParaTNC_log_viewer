@@ -36,26 +36,183 @@ inline bool isParamEnabled (const std::string &label)
 	}
 }
 
+/**
+ * Renders all parameters (param, param2...) into a printable string to be
+ * displayed by spdlog
+ * @note if parameter descriptionFromJson is empty (std::nullopt) this function
+ * renders string with default names
+ * @param event to process
+ * @param skipZeroValues if true, parameters equal to zero are omitted from the output
+ * @param descriptionFromJson optional event description loaded from JSON, used to
+ * name and format parameters
+ * @return string to be displayed by spdlog
+ */
 const std::string ParametersRenderer::getParameterStr (
 	const event_log_t &ev, bool skipZeroValues,
-	const std::optional<EventDescriptionObject> &descriptionFromJson)
+	const std::optional<EventDescriptionObject> &descriptionFromJson,
+	std::optional<int> parameterNumber)
 {
-	std::optional<std::string> cutomParemter = haveCustomParametersDescription (ev);
-	if (cutomParemter.has_value ()) {}
+	if (!descriptionFromJson.has_value () && parameterNumber.has_value ()) {
+		// printing single parameter per line is used only for long labels
+		// read from JSON
+		throw std::runtime_error (
+			"ParametersRenderer::getParameterStr, missing descriptionFromJson");
+	}
+
+	// call to a function which is kinda-sorta copy-paste from ParaMETEO firmware
+	// it checks if there is hardcoded string for this event. ParaMETEO (and config
+	// tool for this moment) doesn't use any kind of JSON database.
+	//
+	// TODO: currently this always return nullopt
+	std::optional<std::string> customParameter = haveCustomParametersDescription (ev);
+	if (customParameter.has_value ()) {
+		// TODO: this if is always false, but put something here to make compiler happy
+		return genericParameter (ev, skipZeroValues);
+	}
 	else {
 		// check if JSON had anything for this event
 		if (descriptionFromJson.has_value ()) {
-			return parameterFromEventDescription (descriptionFromJson.value (), ev);
+			if (parameterNumber.has_value ()) {
+				return singleParameter (ev, descriptionFromJson.value (), parameterNumber.value ());
+			}
+			else {
+				return parameterFromJsonEventDescription (descriptionFromJson.value (), ev);
+			}
 		}
 		else {
-			// TODO: dispatch to a per-event custom formatter once implemented
+			// neither hardcoded specific formatter is present, nor JSON database knowns anything
+			// about this event. display it in generic form
 			return genericParameter (ev, skipZeroValues);
 		}
 	}
-
-	return genericParameter (ev, skipZeroValues);
 }
 
+/**
+ * Renders single parameter for the event. This function is used only in case of
+ * an event with a description found in JSON data, which is so long (which
+ * parameters names are so long) that it can't fit in single console line.
+ * @param event to process
+ * @param descriptionFromJson data from JSON database, which by design is guaranteed to be
+ * available in the moment of a call to this member function
+ * @param parameter which one to render
+ * @return string to be displayed by spdlog
+ */
+const std::string ParametersRenderer::singleParameter (
+	const event_log_t &event, const EventDescriptionObject &descriptionFromJson, int parameter)
+{
+	std::ostringstream oss;
+	auto append = [&] (const std::string label, unsigned long value, bool isHex) {
+		if (!isParamEnabled (label)) {
+			return;
+		}
+
+		if (isHex) {
+			oss << std::hex << label << ": 0x" << value;
+		}
+		else {
+			oss << std::dec << label << ": " << value;
+		}
+	};
+
+	switch (parameter) {
+	case 0:
+		append (descriptionFromJson.param,
+				static_cast<unsigned int> (event.param),
+				descriptionFromJson.asHexParam);
+		break;
+	case 1:
+		append (descriptionFromJson.param2,
+				static_cast<unsigned int> (event.param2),
+				descriptionFromJson.asHexParam2);
+		break;
+	case 2:
+		append (descriptionFromJson.wparam, event.wparam, descriptionFromJson.asHexWparam);
+		break;
+	case 3:
+		append (descriptionFromJson.wparam2, event.wparam2, descriptionFromJson.asHexWparam2);
+		break;
+	case 4:
+		append (descriptionFromJson.wparam3, event.wparam3, descriptionFromJson.asHexWparam3);
+		break;
+	case 5:
+		append (descriptionFromJson.lparam, event.lparam, descriptionFromJson.asHexLparam);
+		break;
+	case 6:
+		append (descriptionFromJson.lparam2, event.lparam2, descriptionFromJson.asHexLParam2);
+		break;
+	default: break; // will result in empty string
+	}
+
+	return oss.str ();
+}
+
+/**
+ * Estimates if the printout of this event will be long enough that it shall be split
+ * to multiple lines. Each parameter in multiple line
+ */
+bool ParametersRenderer::estimateEventPrintoutLn (const EventDescriptionObject &obj,
+												  const event_log_t &event, const int maximumLineLn)
+{
+	// position at which first parameters starts on screen
+	constexpr size_t firstParamColumn = 112;
+
+	size_t ln = 0;
+
+	if (maximumLineLn <= firstParamColumn) {
+		// generally 'maximumLineLn' should not be so small
+		// buy this is a parameter given by a user from the console
+		return true;
+	}
+
+	if (isParamEnabled (obj.param)) {
+		ln += obj.param.length ();
+		ln += 3; // this is 8bit value
+	}
+
+	if (isParamEnabled (obj.param2)) {
+		ln += obj.param2.length ();
+		ln += 3; // this is 8bit value
+	}
+
+	if (isParamEnabled (obj.wparam)) {
+		ln += obj.wparam.length ();
+		ln += 5; // this is 16bit value
+	}
+
+	if (isParamEnabled (obj.wparam2)) {
+		ln += obj.wparam2.length ();
+		ln += 5; // this is 16bit value
+	}
+
+	if (isParamEnabled (obj.wparam3)) {
+		ln += obj.wparam3.length ();
+		ln += 5; // this is 32bit value
+	}
+
+	if (isParamEnabled (obj.lparam)) {
+		ln += obj.lparam.length ();
+		ln += 8; // this is 32bit value
+	}
+
+	if (isParamEnabled (obj.lparam2)) {
+		ln += obj.lparam2.length ();
+		ln += 8; // this is 32bit value
+	}
+
+	if (maximumLineLn <= ln) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+/**
+ * Returns a string if this class has hardcoded member function, which can decode
+ * exact meaning of each parameter, rescale it and print into this returned string
+ * @param event to check
+ * @return string with custom-formatted parameters or nullopt if no custom format is available
+ */
 std::optional<std::string>
 ParametersRenderer::haveCustomParametersDescription (const event_log_t &event)
 {
@@ -165,6 +322,17 @@ ParametersRenderer::haveCustomParametersDescription (const event_log_t &event)
 	return std::nullopt; // for simplicity as for now
 }
 
+/**
+ * Renders generic representation of event parameters in form of:
+ *  p: xxx, p2: xxx, wp: xxxx, wp2: xxx, wp3: xxx, lp: xxx, lp2: xxx
+ *
+ * where 'xxx' are hexadecimal values of each parameter. '0x' prefix is
+ * not printed to save space!
+ *
+ * @param event to print
+ * @param skipZeroValues if true, parameters equal to zero are omitted from the output
+ * @return string with generic rendering
+ */
 std::string ParametersRenderer::genericParameter (const event_log_t &event, bool skipZeroValues)
 {
 	std::ostringstream oss;
@@ -195,8 +363,17 @@ std::string ParametersRenderer::genericParameter (const event_log_t &event, bool
 	return oss.str ();
 }
 
-std::string ParametersRenderer::parameterFromEventDescription (const EventDescriptionObject &obj,
-															   const event_log_t &event)
+/**
+ * Renders a specific representation of an event parameters using description from JSON file.
+ * Only parameters which are used to store something will be printed, each with own,
+ * name. By default, a tool which create this JSON puts a variable name put into a call
+ * to log function
+ * @param obj description from JSON
+ * @param event event log to stringify
+ */
+std::string
+ParametersRenderer::parameterFromJsonEventDescription (const EventDescriptionObject &obj,
+													   const event_log_t &event)
 {
 	std::ostringstream oss;
 	bool first = true;
@@ -210,10 +387,10 @@ std::string ParametersRenderer::parameterFromEventDescription (const EventDescri
 		}
 
 		if (isHex) {
-			oss << std::hex << label << value;
+			oss << std::hex << label << ": 0x" << value;
 		}
 		else {
-			oss << std::dec << label << value;
+			oss << std::dec << label << ": " << value;
 		}
 
 		first = false;
