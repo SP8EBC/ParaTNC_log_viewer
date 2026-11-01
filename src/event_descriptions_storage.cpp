@@ -4,6 +4,9 @@
 #include "nlohmann/json.hpp"
 #include "spdlog/spdlog.h"
 
+#include "shared/event_log_to_string.h"
+
+#include <iostream>
 #include <stdexcept>
 
 using json = nlohmann::json;
@@ -51,6 +54,11 @@ static EventDescriptionObject parseSingleEvent (const json &j)
 	out.asHexLparam = j.at ("asHexLparam").get<bool> ();
 	out.asHexLParam2 = j.at ("asHexLparam2").get<bool> ();
 
+	if (out.eventString.length () == 0 || std::isprint (out.eventString[0])) {
+		// put a placeholder name with event id
+		out.eventString = "Event id " + std::to_string (out.eventId);
+	}
+
 	return out;
 }
 
@@ -60,8 +68,10 @@ EventDescriptionsStorage::EventDescriptionsStorage (const std::string_view &json
 	try {
 		const json root = json::parse (jsonContent);
 
-		SPDLOG_INFO("JSON event log description: {}", root.at("name").get<std::string>());
-		SPDLOG_INFO("JSON event log creation date: {}", root.at("lastEditUtcISO8601").get<std::string>());
+		std::cout << "--- JSON event log description: " << root.at ("name").get<std::string> ()
+				  << std::endl;
+		std::cout << "--- JSON event log creation date: "
+				  << root.at ("lastEditUtcISO8601").get<std::string> () << std::endl;
 
 		for (const json &event : root.at ("events")) {
 			EventDescriptionObject description = parseSingleEvent (event);
@@ -72,17 +82,17 @@ EventDescriptionsStorage::EventDescriptionsStorage (const std::string_view &json
 			const auto [it, inserted] = map->emplace (description.eventId, description);
 			// exact copies of an already stored description are harmless
 			if (!inserted && !(it->second == description)) {
-				SPDLOG_WARN ("Duplicated event description for source {}, eventId {}. Ignoring '{}'",
-							  static_cast<int> (description.source),
-							  description.eventId,
-							  description.eventString);
+				std::cout << "--- Duplicated event description for source "
+						  << event_log_source_to_str (description.source) << ", event ID "
+						  << (int)description.eventId << ". event name '" << description.eventString
+						  << "'" << std::endl;
 			}
 		}
 
 		m_ConstructorSuccess = true;
 	}
 	catch (const std::exception &ex) {
-		SPDLOG_ERROR ("Failed to parse event descriptions JSON: {}", ex.what ());
+		std::cout << "--- Failed to parse event descriptions JSON: " << ex.what () << std::endl;
 		m_ConstructorSuccess = false;
 	}
 }

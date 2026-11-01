@@ -6,7 +6,7 @@
 
 namespace {
 constexpr uint32_t SERIAL_BAUDRATE = 115200;
-constexpr uint32_t SERIAL_READ_TIMEOUT_MS = 10000;
+constexpr uint32_t SERIAL_READ_TIMEOUT_MS = 22000;
 
 constexpr uint32_t EVENT_CRC_POLY = 0x04C11DB7;
 constexpr uint32_t EVENT_CRC_SEED = 0xFFFFFFFF;

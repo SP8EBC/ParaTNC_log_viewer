@@ -260,7 +260,7 @@ void parseArgs (int argc, char *argv[])
 		boost::program_options::notify (odVariablesMap);
 	}
 	catch (boost::wrapexcept<boost::program_options::unknown_option> &ex) {
-		SPDLOG_ERROR ("Missing or wrong parameter!");
+		std::cout << "--- Missing or wrong parameter!" << std::endl;
 		std::cout << ex.what () << std::endl << optionsDescription << std::endl;
 		exit (-2);
 	}
@@ -274,7 +274,7 @@ void parseArgs (int argc, char *argv[])
 	if (odVariablesMap.count ("event-name-width")) {
 		const int width = odVariablesMap["event-name-width"].as<int> ();
 		if (width < 0) {
-			SPDLOG_ERROR ("event-name-width must not be negative!");
+			std::cout << "--- event-name-width must not be negative!" << std::endl;
 			std::cout << optionsDescription << std::endl;
 			exit (-4);
 		}
@@ -286,11 +286,15 @@ void parseArgs (int argc, char *argv[])
 
 int main (int argc, char *argv[])
 {
+	std::cout << "================== ParaTNC_log_viewer  ==================" << std::endl;
+	std::cout << "How this program puts stuff on the console:" << std::endl << std::endl;
+	std::cout << "	All messages coming from internals, like decoding errors, serial port problems" << std::endl;
+	std::cout << "	are prefixed with triple hyphen '---'" << std::endl << std::endl;
+	std::cout << "	Events received from the log via serial port are printed by SPDLOG" << std::endl << std::endl;
 	parseArgs (argc, argv);
 
 	spdlog::set_level (spdlog::level::debug);
 	spdlog::set_pattern ("[%Y-%m-%d %H:%M:%S.%e] [%^%-8l%$] %v");
-	SPDLOG_INFO ("============ ParaTNC_log_viewer  =============");
 
 	SerialIo serialIo (serialPort);
 	if (serialIo.open () == false) {

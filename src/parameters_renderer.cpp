@@ -156,11 +156,11 @@ bool ParametersRenderer::estimateEventPrintoutLn (const EventDescriptionObject &
 	// position at which first parameters starts on screen
 	constexpr size_t firstParamColumn = 112;
 
-	size_t ln = 0;
+	size_t ln = firstParamColumn;
 
 	if (maximumLineLn <= firstParamColumn) {
 		// generally 'maximumLineLn' should not be so small
-		// buy this is a parameter given by a user from the console
+		// but this is a parameter given by a user from the console
 		return true;
 	}
 
