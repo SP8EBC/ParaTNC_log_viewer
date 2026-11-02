@@ -1,7 +1,10 @@
 #include <boost/program_options.hpp>
 #include <cerrno>
 #include <cstdio>
+#include <fstream>
 #include <iostream>
+#include <iterator>
+#include <memory>
 #include <string>
 
 #pragma push_macro("U")
@@ -30,6 +33,9 @@ bool skipZeroValues = false;
 bool eventNameWidthSet = false;
 std::size_t eventNameWidth = 0;
 std::size_t maximumLineLn = 230;
+std::string jsonEventsFile; //!< If this is empty, the application will use internal, hardcoded
+bool alwaysDisplayRaw; //!< Never use hardcoded or JSON file descriptions, always show raw events id
+					   //!< and params values
 
 /// ==================================================================================================
 ///	LOCAL DATA TYPES
@@ -98,7 +104,17 @@ static RenderedEvent renderEvent (const event_log_t &ev,
 	 */
 	const event_log_source_t source_t = static_cast<event_log_source_t> (ev.source);
 
-	if (eventDescriptionJson.has_value ()) {
+	if (alwaysDisplayRaw) {
+		const std::string eventString = "Event id " + std::to_string (ev.event_id);
+
+		return RenderedEvent{
+			static_cast<event_log_severity_t> (ev.severity),
+			ev.event_counter_id,
+			event_log_source_to_str (source_t),
+			ParametersRenderer::getParameterStr (ev, skipZeroValues, eventDescriptionJson),
+			formatEventName (eventString)};
+	}
+	else if (eventDescriptionJson.has_value ()) {
 		// braced initializer list is evaluated left to right, so params are rendered
 		// before eventString is moved out of eventDescriptionJson
 		return RenderedEvent{
@@ -140,6 +156,11 @@ renderEventSingleParameter (const event_log_t &ev,
 {
 	if (!eventDescriptionJson.has_value ()) {
 		throw std::runtime_error ("eventDescriptionJson cannot be empty here!!");
+	}
+
+	if (alwaysDisplayRaw) {
+		throw std::runtime_error ("decoding-always-raw should disable any parameters decoding, so "
+								  "all parameters shall be in single line");
 	}
 
 	const event_log_source_t source_t = static_cast<event_log_source_t> (ev.source);
@@ -236,10 +257,31 @@ void parseArgs (int argc, char *argv[])
 		  " : Serial port used for communication");
 	optionsDescription.add (generalOptions);
 
+	// ---------------------------------------------
+	//  PARAMETERS DECODING FROM JSON DESCRIPTION
+	// ---------------------------------------------
+	boost::program_options::options_description parametersDescriptionsOptions (
+		"Events parameters decoding from JSON description");
+
+	boost::program_options::options_description_easy_init jsonFile =
+		parametersDescriptionsOptions.add_options ();
+	jsonFile (
+		"decoding-external-json",
+		boost::program_options::value<std::string> (&jsonEventsFile),
+		" : External JSON with event parameter descriptions. Replaces internal, hardcoded data");
+	boost::program_options::options_description_easy_init alwaysRaw =
+		parametersDescriptionsOptions.add_options ();
+	alwaysRaw ("decoding-always-raw",
+			   boost::program_options::bool_switch (&alwaysDisplayRaw),
+			   " : Do not decode events, always shows raw event ID and parameters values");
+
+	optionsDescription.add (parametersDescriptionsOptions);
+
 	// ------------------
 	// FORMATTING OPTIONS
 	// ------------------
 	boost::program_options::options_description formattingOptions ("Formatting");
+
 	boost::program_options::options_description_easy_init formatOpts =
 		formattingOptions.add_options ();
 	formatOpts ("skip-zero-params,Z",
@@ -249,6 +291,7 @@ void parseArgs (int argc, char *argv[])
 				boost::program_options::value<int> (),
 				" : Fixed width for printed event name column; shorter names are space "
 				"padded, longer ones trimmed. If not given, event name is printed as-is");
+
 	optionsDescription.add (formattingOptions);
 
 	// PARSING
@@ -288,9 +331,11 @@ int main (int argc, char *argv[])
 {
 	std::cout << "================== ParaTNC_log_viewer  ==================" << std::endl;
 	std::cout << "How this program puts stuff on the console:" << std::endl << std::endl;
-	std::cout << "	All messages coming from internals, like decoding errors, serial port problems" << std::endl;
+	std::cout << "	All messages coming from internals, like decoding errors, serial port problems"
+			  << std::endl;
 	std::cout << "	are prefixed with triple hyphen '---'" << std::endl << std::endl;
-	std::cout << "	Events received from the log via serial port are printed by SPDLOG" << std::endl << std::endl;
+	std::cout << "	Events received from the log via serial port are printed by SPDLOG" << std::endl
+			  << std::endl;
 	parseArgs (argc, argv);
 
 	spdlog::set_level (spdlog::level::debug);
@@ -302,7 +347,25 @@ int main (int argc, char *argv[])
 	}
 
 	// reads JSON and creates database with event description (what parameters means etc)
-	EventDescriptionsStorage jsonEvents (hardcodedJson);
+	std::unique_ptr<EventDescriptionsStorage> jsonEvents (nullptr); // (hardcodedJson);
+
+	if (jsonEventsFile.length () > 1) {
+		// read content of a file from path 'jsonEventsFile'
+		std::ifstream jsonFile (jsonEventsFile);
+		if (!jsonFile.is_open ()) {
+			std::cout << "--- Cannot open JSON events file: " << jsonEventsFile << std::endl;
+			return -5;
+		}
+
+		const std::string jsonContent ((std::istreambuf_iterator<char> (jsonFile)),
+									   std::istreambuf_iterator<char> ());
+
+		// create an instance of EventDescriptionsStorage on jsonEvents using data from file
+		jsonEvents = std::make_unique<EventDescriptionsStorage> (jsonContent);
+	}
+	else {
+		jsonEvents = std::make_unique<EventDescriptionsStorage> (hardcodedJson);
+	}
 
 	// infinite loop which receives events from serial port
 	while (true) {
@@ -319,10 +382,10 @@ int main (int argc, char *argv[])
 
 			// looks for description in data from JSON file
 			std::optional<EventDescriptionObject> eventDescriptionJson =
-				jsonEvents.getForEvent (ev);
+				jsonEvents->getForEvent (ev);
 
 			// if JSON file contain something about this event
-			if (eventDescriptionJson.has_value ()) {
+			if (eventDescriptionJson.has_value () && !alwaysDisplayRaw) {
 				// get an object value
 				const EventDescriptionObject &obj = eventDescriptionJson.value ();
 

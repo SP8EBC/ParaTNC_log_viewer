@@ -19,7 +19,7 @@ WARNS := -Wmaybe-uninitialized -Wpedantic -Wno-return-local-addr -Wparentheses -
 WIN_CC := i686-w64-mingw32-gcc
 WIN_CXX := i686-w64-mingw32-g++
 WIN_BUILD_DIR := build-win32
-WIN_OBJS := $(WIN_BUILD_DIR)/src/main.o $(WIN_BUILD_DIR)/src/hardcoded_event_log_description_json.cpp $(WIN_BUILD_DIR)/src/event_descriptions_storage.o $(WIN_BUILD_DIR)/src/serial_io.o $(WIN_BUILD_DIR)/src/serial_port_selector.o $(WIN_BUILD_DIR)/src/parameters_renderer.o $(WIN_BUILD_DIR)/shared/crc_.o $(WIN_BUILD_DIR)/shared/event_log_to_string.o $(WIN_BUILD_DIR)/wjwwood_serial/src/serial.o $(WIN_BUILD_DIR)/wjwwood_serial/src/impl/win.o $(WIN_BUILD_DIR)/wjwwood_serial/src/impl/list_ports/list_ports_win.o
+WIN_OBJS := $(WIN_BUILD_DIR)/src/main.o $(WIN_BUILD_DIR)/src/hardcoded_event_log_description_json.o $(WIN_BUILD_DIR)/src/event_descriptions_storage.o $(WIN_BUILD_DIR)/src/serial_io.o $(WIN_BUILD_DIR)/src/serial_port_selector.o $(WIN_BUILD_DIR)/src/parameters_renderer.o $(WIN_BUILD_DIR)/shared/crc_.o $(WIN_BUILD_DIR)/shared/event_log_to_string.o $(WIN_BUILD_DIR)/wjwwood_serial/src/serial.o $(WIN_BUILD_DIR)/wjwwood_serial/src/impl/win.o $(WIN_BUILD_DIR)/wjwwood_serial/src/impl/list_ports/list_ports_win.o
 WIN_DEFINES := -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG -DBOOST_ALL_NO_LIB
 # mingw32_libs/include holds symlinks to exactly the system boost/fmt/spdlog
 # header dirs (see mingw32_libs/BUILD_NOTES.md) -- deliberately NOT the whole

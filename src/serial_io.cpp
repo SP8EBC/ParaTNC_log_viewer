@@ -87,8 +87,8 @@ std::optional<event_log_t> SerialIo::receiveSingleEvent ()
 		calcCRC32std (buffer.data (), kPacketSize - 1, EVENT_CRC_POLY, EVENT_CRC_SEED, 0, 0, 0);
 
 	if (static_cast<uint8_t> (crc & 0xFF) != event.crc_checksum) {
-		std::cout << "--- CRC checksum is not correct, calculated: " << std::hex << (crc & 0xFF)
-				  << ", expected: " << event.crc_checksum << std::endl;
+		std::cout << "--- CRC checksum is not correct, calculated: 0x" << std::hex << (int)(crc & 0xFF)
+				  << ", expected: 0x" << (int)event.crc_checksum << std::endl;
 
 		std::cout << std::hex << std::setfill ('0');
 		for (size_t i = 0; i < buffer.size (); i++) {
